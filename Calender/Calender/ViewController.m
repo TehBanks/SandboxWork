@@ -39,6 +39,10 @@
     
     NSLog(@"%i %i",firstDay,length);
     
+    //Get the current calender dictionary
+    NSUserDefaults *defaults =  [NSUserDefaults standardUserDefaults];
+    NSDictionary *calenderDict = [defaults objectForKey:@"calender"];
+    
     for(int x= 0; x < 6; x++)
     {
         for(int y=0; y < 7; y++)
@@ -51,7 +55,26 @@
             {
                 NSString *theTitle = [NSString stringWithFormat:@"%i", date];
                 [button setTitle:theTitle forState:UIControlStateNormal];
-                [button setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+                
+                //Get the key for the current date
+                NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+                [dateFormatter setDateFormat:@"MMYYYY"];
+                NSString *key = [NSString stringWithFormat:@"%ld%@", (long)date, [dateFormatter stringFromDate:theDate]];
+
+                
+                //Set Color based off of dictionary
+                if([calenderDict objectForKey:key] != nil)
+                {
+                    if((int)[calenderDict objectForKey:key] != 1)
+                    {
+                        [button setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+                    }
+                }
+                else
+                {
+                   [button setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+                }
+                
                  date++;
             }
             else
@@ -119,13 +142,36 @@
 {
     UIButton *btn =  (UIButton *) sender;
     NSLog(@"Button Click!");
+    NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+    NSDictionary *currCalender = [defaults objectForKey:@"calender"];
+    
+    //State checks
     if([btn titleColorForState:UIControlStateNormal] == [UIColor redColor])
     {
-            [btn setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+        [btn setTitleColor:[UIColor greenColor] forState:UIControlStateNormal];
+
+        //Update NSUserDefaults
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setDateFormat:@"MMYYYY"];
+        NSString *key = [NSString stringWithFormat:@"%@%@", [btn currentTitle], [dateFormatter stringFromDate:theDate]];
+        
+        NSLog(@"%@",key);
+        
+        [currCalender setValue:[NSNumber numberWithInt:1] forKey:key];
+        
     }
     else
     {
-            [btn setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+        [btn setTitleColor:[UIColor redColor] forState:UIControlStateNormal];
+        
+        //Update NSUserDefaults
+        NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+        [dateFormatter setDateFormat:@"MMYYYY"];
+        NSString *key = [NSString stringWithFormat:@"%@%@", [btn currentTitle], [dateFormatter stringFromDate:theDate]];
+        
+        NSLog(@"%@",key);
+        
+        [currCalender setValue:[NSNumber numberWithInt:0] forKey:key];
     }
 
 
@@ -137,6 +183,17 @@
     [super viewDidLoad];
 	// Do any additional setup after loading the view, typically from a nib.
     
+    NSUserDefaults *defaults =  [NSUserDefaults standardUserDefaults];
+    
+    if([defaults objectForKey:@"calender"] == nil)
+    {
+        NSLog(@"Doesn't Exist Yet!");
+        
+        NSDictionary *emptyDictionary = [[NSDictionary alloc] init];
+        
+        [defaults setObject:emptyDictionary forKey:@"calender"];
+    }
+    
     NSCalendar *CurrCalendar = [NSCalendar currentCalendar];
     NSDateComponents *comp = [CurrCalendar components:(NSYearCalendarUnit | NSMonthCalendarUnit | NSDayCalendarUnit) fromDate:[NSDate date]];
     [comp setDay:1];
@@ -144,6 +201,7 @@
      theDate = [CurrCalendar dateFromComponents:comp];
     [self DrawGrid];
     [self UpdateHeaderLabels];
+    
 }
 
 - (void)didReceiveMemoryWarning
